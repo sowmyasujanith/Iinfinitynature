@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iinfinity Nature Hotel - Feedback Dashboard</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- XLSX for Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+    * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      color: #222;
+    }
+
+    .leaf {
+      position: fixed;
+      top: -50px;
+      width: 40px;
+      height: 40px;
+      background: url('https://cdn-icons-png.flaticon.com/512/415/415733.png') center/contain no-repeat;
+      opacity: 0.6;
+      animation: fall linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    .hero {
+      position: relative;
+      text-align: center;
+      color: white;
+      width: 100%;
+      padding: 80px 20px;
+      background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
+      background-attachment: fixed;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+    }
+
+    .hero h1 {
+      position: relative;
+      font-size: 2.8em;
+      font-weight: 700;
+      z-index: 1;
+      margin: 0;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .container {
+      position: relative;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 95%;
+      max-width: 1300px;
+      margin: -50px auto 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      z-index: 2;
+      display: none;
+      overflow-x: auto;
+      min-height: 600px;
+    }
+
+    h2 { text-align: center; color: #0077b6; margin-bottom: 25px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    th {
+      background: #0077b6;
+      color: white;
+    }
+
+    tr:nth-child(even) { background: #f2f2f2; }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0077b6, #00b4d8);
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+      transition: 0.3s;
+      margin: 10px 5px;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      transform: translateY(-2px);
+    }
+
+    footer { color: white; text-align: center; padding: 10px; opacity: 0.9; }
+
+    /* Login overlay */
+    #loginOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    #loginBox {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      width: 320px;
+    }
+
+    #loginBox input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      font-size: 1em;
+    }
+
+    #loginBox button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0077b6, #00b4d8);
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #loginBox button:hover {
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+    }
+
+    #loginError {
+      color: red;
+      font-size: 0.9em;
+      margin-top: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  for (let i = 0; i < 12; i++) {
+    const leaf = document.createElement('div');
+    leaf.className = 'leaf';
+    leaf.style.left = Math.random() * 100 + 'vw';
+    leaf.style.animationDuration = 10 + Math.random() * 10 + 's';
+    leaf.style.animationDelay = Math.random() * 10 + 's';
+    leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+    document.body.appendChild(leaf);
+  }
+</script>
+
+<div id="loginOverlay">
+  <div id="loginBox">
+    <h2>Admin Login</h2>
+    <input type="password" id="adminPassword" placeholder="Enter password">
+    <button onclick="checkLogin()">Login</button>
+    <div id="loginError">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<div class="hero"><h1>Iinfinity Nature Hotel - Admin Dashboard</h1></div>
+
+<div class="container" id="dashboardContainer">
+  <h2>Guest Feedback Records</h2>
+
+  <div style="text-align:center;">
+    <button class="btn" id="downloadExcel">📊 Export to Excel</button>
+    <button class="btn" id="resetHistory">🗑️ Reset History</button>
+    <a href="index.html" class="btn">🏠 Back to Form</a>
+  </div>
+
+  <table id="feedbackTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Contact</th>
+        <th>DOB</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Nights</th>
+        <th>Status</th>
+        <th>People</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Country</th>
+        <th>Room & Cleanliness</th>
+        <th>Food & Dining</th>
+        <th>Service</th>
+        <th>Staff</th>
+        <th>Location & Ambiance</th>
+        <th>Facilities & Comfort</th>
+        <th>Value for Money</th>
+        <th>Comments</th>
+        <th>Date Submitted</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p id="loadingText" style="text-align:center; color:gray; margin-top:10px;">Loading feedback...</p>
+</div>
+
+<footer>© 2025 Iinfinity Nature Hotel - Kodaikanal</footer>
+
+<script>
+  const ADMIN_PASSWORD = "nature@admin";
+
+  function checkLogin() {
+    const entered = document.getElementById("adminPassword").value;
+    if (entered === ADMIN_PASSWORD) {
+      document.getElementById("loginOverlay").style.display = "none";
+      document.getElementById("dashboardContainer").style.display = "block";
+    } else {
+      document.getElementById("loginError").style.display = "block";
+    }
+  }
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyAd52lRWHiWz5A_5Wo90J32WViBIAQAKcI",
+  authDomain: "iinfinity-nature-4ecf6.firebaseapp.com",
+  databaseURL: "https://iinfinity-nature-4ecf6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "iinfinity-nature-4ecf6",
+  storageBucket: "iinfinity-nature-4ecf6.firebasestorage.app",
+  messagingSenderId: "621564274279",
+  appId: "1:621564274279:web:3768d232e8af2764e296c2",
+  measurementId: "G-MMHQFRY96J"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const tableBody = document.querySelector("#feedbackTable tbody");
+  const loadingText = document.getElementById("loadingText");
+
+  function loadFeedback() {
+    db.ref("hotel_feedback").on("value", snapshot => {
+      const data = snapshot.val();
+      tableBody.innerHTML = "";
+      if (!data) {
+        loadingText.textContent = "No feedback available yet.";
+        return;
+      }
+      loadingText.style.display = "none";
+
+      Object.values(data).forEach(item => {
+        const r = item.ratings || {};
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.name || ""}</td>
+          <td>${item.contact || ""}</td>
+          <td>${item.dob || ""}</td>
+          <td>${item.fromDate || ""}</td>
+          <td>${item.toDate || ""}</td>
+          <td>${item.nights || ""}</td>
+          <td>${item.status || ""}</td>
+          <td>${item.people || ""}</td>
+          <td>${item.city || ""}</td>
+          <td>${item.state || ""}</td>
+          <td>${item.country || ""}</td>
+          <td>${r.room_cleanliness || ""}</td>
+          <td>${r.food_dining || ""}</td>
+          <td>${r.service || ""}</td>
+          <td>${r.staff || ""}</td>
+          <td>${r.location_ambiance || ""}</td>
+          <td>${r.facilities_comfort || ""}</td>
+          <td>${r.value_money || ""}</td>
+          <td>${item.comments || ""}</td>
+          <td>${new Date(item.timestamp).toLocaleString()}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    });
+  }
+
+  document.querySelector("button[onclick='checkLogin()']").addEventListener("click", loadFeedback);
+
+  document.getElementById("downloadExcel").addEventListener("click", () => {
+    const table = document.getElementById("feedbackTable");
+    const workbook = XLSX.utils.table_to_book(table, { sheet: "Feedback" });
+    XLSX.writeFile(workbook, "IinfinityNature_Feedback.xlsx");
+  });
+
+  document.getElementById("resetHistory").addEventListener("click", () => {
+    if (!confirm("⚠️ Are you sure you want to delete all feedback records? This action cannot be undone.")) {
+      return;
+    }
+
+    db.ref("hotel_feedback").remove()
+      .then(() => {
+        tableBody.innerHTML = "";
+        loadingText.style.display = "block";
+        loadingText.textContent = "All feedback has been deleted.";
+        alert("✅ Feedback history reset successfully!");
+      })
+      .catch((error) => {
+        console.error("Error resetting feedback:", error);
+        alert("❌ Failed to reset feedback. Check console for details.");
+      });
+  });
+</script>
+
+</body>
+</html>

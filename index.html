@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+    * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      color: #222;
+    }
+
+    .leaf {
+      position: fixed;
+      top: -50px;
+      width: 40px;
+      height: 40px;
+      background: url('https://cdn-icons-png.flaticon.com/512/415/415733.png') center/contain no-repeat;
+      opacity: 0.6;
+      animation: fall linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    .hero {
+      position: relative;
+      text-align: center;
+      color: white;
+      width: 100%;
+      padding: 80px 20px;
+      background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
+      background-attachment: fixed;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+    }
+    .hero h1 {
+      position: relative;
+      font-size: 3em;
+      font-weight: 700;
+      z-index: 1;
+      margin: 0;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .container {
+      position: relative;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 700px;
+      width: 90%;
+      margin: -50px auto 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      z-index: 2;
+    }
+
+    h2 { text-align: center; margin-bottom: 20px; color: #0077b6; }
+    label { font-weight: 600; margin-top: 10px; display: block; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      transition: 0.3s;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0077b6, #00b4d8);
+      color: white;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      transform: translateY(-2px);
+    }
+
+    footer { color: white; text-align: center; padding: 10px; opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+<script>
+  // Floating leaves animation
+  for (let i = 0; i < 12; i++) {
+    const leaf = document.createElement('div');
+    leaf.className = 'leaf';
+    leaf.style.left = Math.random() * 100 + 'vw';
+    leaf.style.animationDuration = 10 + Math.random() * 10 + 's';
+    leaf.style.animationDelay = Math.random() * 10 + 's';
+    leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+    document.body.appendChild(leaf);
+  }
+</script>
+
+<div class="hero"> 
+ <img src="images/infinity.png" alt="Infinite Nature Logo" />    <h1>Iinfinity Nature Hotel - Kodaikanal</h1>
+</div>
+
+<div class="container">
+  <h2>Guest Feedback Form</h2>
+  <form id="feedbackForm">
+    <label>Name</label>
+    <input type="text" id="name" required>
+
+    <label>Contact Number</label>
+    <input type="tel" id="contact" required>
+
+    <label>Date of Birth</label>
+    <input type="date" id="dob">
+
+    <label>Stayed From</label>
+    <input type="date" id="fromDate">
+
+    <label>Stayed To</label>
+    <input type="date" id="toDate">
+
+    <label>Nights</label>
+    <input type="number" id="nights" readonly>
+
+    <label>Status</label>
+    <select id="status"><option>Alone</option><option>Group</option></select>
+
+    <label>Number of People</label>
+    <input type="number" id="people">
+
+    <label>City</label><input type="text" id="city">
+    <label>State</label><input type="text" id="state">
+    <label>Country</label><input type="text" id="country">
+
+    <!-- ✅ Ratings Section -->
+    <h3 style="text-align:center; color:#0077b6; margin-top:25px;">Rate Your Experience</h3>
+
+    <label>Room & Cleanliness</label>
+    <select id="rating_room">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label>Food & Dining</label>
+    <select id="rating_food">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label>Service</label>
+    <select id="rating_service">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label>Staff</label>
+    <select id="rating_staff">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label>Location & Ambiance</label>
+    <select id="rating_location">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label>Facilities & Comfort</label>
+    <select id="rating_facilities">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label>Value for Money</label>
+    <select id="rating_value">
+      <option value="">Select</option>
+      <option value="1">1 - Poor</option>
+      <option value="2">2 - Need Improvement</option>
+      <option value="3">3 - Good</option>
+      <option value="4">4 - Better</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+
+
+    <label>Additional Comments</label>
+    <textarea id="comments" rows="4"></textarea>
+
+    <button type="submit">Submit Feedback</button>
+  </form>
+
+  <div id="successMessage" style="display:none; text-align:center; margin-top:20px; color:green; font-weight:600;">
+    ✅ Thank you! Your feedback has been successfully submitted.
+  </div>
+</div>
+
+
+<footer>
+  © 2025 Iinfinity Nature Hotel - Kodaikanal <br>
+
+  <a href="https://www.iinfinitynature.com/" target="_blank" style="color:white; margin:0 10px; text-decoration:underline;">
+    www.iinfinitynature.com
+  </a>
+
+  <a href="https://www.instagram.com/reel/DKPGS9Xqnxm/?igsh=eXE4c2kwYWVzMXp4" target="_blank" style="color:white; margin:0 10px; text-decoration:none;">
+    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="22" alt="Instagram" style="vertical-align:middle;"/>
+  </a>
+
+</footer>
+
+
+
+
+
+<p style="text-align:center; margin-top:10px;">
+  <a href="admin.html" style="color:#fff; text-decoration:underline;">Admin Login</a>
+</p>
+
+<script>
+  const firebaseConfig = {
+  apiKey: "AIzaSyAd52lRWHiWz5A_5Wo90J32WViBIAQAKcI",
+  authDomain: "iinfinity-nature-4ecf6.firebaseapp.com",
+  databaseURL: "https://iinfinity-nature-4ecf6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "iinfinity-nature-4ecf6",
+  storageBucket: "iinfinity-nature-4ecf6.firebasestorage.app",
+  messagingSenderId: "621564274279",
+  appId: "1:621564274279:web:3768d232e8af2764e296c2",
+  measurementId: "G-MMHQFRY96J"
+  };
+
+  // ✅ Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // ✅ Automatically calculate nights
+  const fromInput = document.getElementById("fromDate");
+  const toInput = document.getElementById("toDate");
+  const nightsInput = document.getElementById("nights");
+
+  function calculateNights() {
+    const fromVal = fromInput.value;
+    const toVal = toInput.value;
+    if (fromVal && toVal) {
+      const fromDate = new Date(fromVal);
+      const toDate = new Date(toVal);
+      const diffTime = toDate - fromDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      nightsInput.value = diffDays > 0 ? diffDays : 0;
+    } else {
+      nightsInput.value = "";
+    }
+  }
+
+  fromInput.addEventListener("change", calculateNights);
+  toInput.addEventListener("change", calculateNights);
+
+  document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const getVal = id => document.getElementById(id)?.value?.trim() || "";
+    const data = {
+      name: getVal("name"),
+      contact: getVal("contact"),
+      dob: getVal("dob") || null,
+      fromDate: getVal("fromDate") || null,
+      toDate: getVal("toDate") || null,
+      nights: Number(getVal("nights")) || 0,
+      status: getVal("status") || "Alone",
+      people: Number(getVal("people")) || 1,
+      city: getVal("city") || "",
+      state: getVal("state") || "",
+      country: getVal("country") || "",
+      // ✅ Ratings added
+      ratings: {
+        room_cleanliness: getVal("rating_room"),
+        food_dining: getVal("rating_food"),
+        service: getVal("rating_service"),
+        staff: getVal("rating_staff"),
+        location_ambiance: getVal("rating_location"),
+        facilities_comfort: getVal("rating_facilities"),
+        value_money: getVal("rating_value")
+      },
+      comments: getVal("comments") || "",
+      timestamp: new Date().toISOString()
+    };
+
+    if (!data.name || !data.contact) {
+      alert("Please fill required fields before submitting.");
+      return;
+    }
+
+    try {
+      await db.ref("hotel_feedback").push(data);
+      document.getElementById("feedbackForm").reset();
+      const msg = document.getElementById("successMessage");
+      msg.style.display = "block";
+      setTimeout(() => (msg.style.display = "none"), 4000);
+    } catch (err) {
+      console.error("Error saving feedback:", err);
+      alert("Error saving feedback: " + err.message);
+    }
+  });
+</script>
+
+</body>
+</html>
